@@ -1,0 +1,5 @@
+.env
+node_modules/
+assets/**/*.png
+assets/**/*.txt
+assets/**/*.csv
