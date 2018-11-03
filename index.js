@@ -4,9 +4,10 @@ const retry = require('async-retry');
 require('dotenv').config();
 
 const rekognition = new AWS.Rekognition({ region: 'eu-west-1' });
+const params = require('./lib/params')(process.argv);
 
-const provider = 'rekognition';
-const assetsType = 'prenoms';
+const provider = params.provider;
+const assetsType = params.assetsType;
 
 const baseDir = process.env.BASE_DIR;
 const inputsDir = `${baseDir}/${assetsType}/`;
@@ -15,7 +16,7 @@ const reportFile = `${provider}/${assetsType}.csv`;
 let report = fs.createWriteStream(`./assets/output/${reportFile}`);
 report.write('file;status;output;full-output;\n');
 
-const getText = async file => {
+const getTextFromRekognition = async file => {
   await retry(async (bail, num) => {
     rekognition.detectText(
       {
@@ -61,4 +62,4 @@ const getText = async file => {
 
 fs.readdirSync(inputsDir)
   .filter(f => f.substr(-4) === '.png')
-  .map(file => getText(inputsDir + file));
+  .map(file => getTextFromRekognition(inputsDir + file));

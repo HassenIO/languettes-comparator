@@ -4,6 +4,9 @@
   "author": "Hassen Taidirt <htaidirt@gmail.com>",
   "main": "index.js",
   "license": "MIT",
+  "scripts": {
+    "start": "node index.js provider=rekognition assetsType=prenoms"
+  },
   "dependencies": {
     "@google-cloud/vision": "^0.22.1",
     "async-retry": "^1.2.3",
