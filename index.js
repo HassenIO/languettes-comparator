@@ -63,7 +63,7 @@ const getTextFromGCVision = async file => {
   try {
     const textDetection = await client.textDetection(file);
     text = (textDetection && textDetection[0] && textDetection[0].fullTextAnnotation) ? textDetection[0].fullTextAnnotation.text.replace(/\n/g, '') : undefined;
-    JSON.stringify(textDetection).replace(/\n/g, '')
+    const originalData = JSON.stringify(textDetection).replace(/\n/g, '')
     console.log(`Processed ${file} -> ${text}`);
     if (text) {
       output = [ file.substr(inputsDir.length), 'OK', text, originalData ];
