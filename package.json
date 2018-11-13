@@ -5,11 +5,11 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "node index.js provider=rekognition assetsType=prenoms"
+    "start:rekognition": "node index.js provider=rekognition assetsType=prenoms",
+    "start:gc-vision": "node index.js provider=gc-vision assetsType=prenoms"
   },
   "dependencies": {
     "@google-cloud/vision": "^0.22.1",
-    "async-retry": "^1.2.3",
     "aws-sdk": "^2.329.0",
     "dotenv": "^6.1.0",
     "jsonexport": "^2.3.0"

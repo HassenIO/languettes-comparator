@@ -1,0 +1,2 @@
+export GOOGLE_APPLICATION_CREDENTIALS="$(pwd)/credentials/gc.json"
+cat $GOOGLE_APPLICATION_CREDENTIALS
