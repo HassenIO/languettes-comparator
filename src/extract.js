@@ -5,7 +5,7 @@ require('dotenv').config();
 
 const rekognition = new AWS.Rekognition({ region: 'eu-west-1' });
 const client = new vision.ImageAnnotatorClient();
-const params = require('./lib/params')(process.argv);
+const params = require('../lib/params')(process.argv);
 
 const provider = params.provider;
 const assetsType = params.assetsType;
@@ -14,7 +14,7 @@ const baseDir = process.env.BASE_DIR;
 const inputsDir = `${baseDir}/${assetsType}/`;
 const reportFile = `${provider}/${assetsType}.csv`;
 
-const reportLocation = `./assets/output/${reportFile}`;
+const reportLocation = `../assets/output/${reportFile}`;
 let report;
 let processedAssets = [];
 
