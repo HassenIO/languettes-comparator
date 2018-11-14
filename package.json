@@ -18,12 +18,20 @@
     "extract:rekognition:mrz1": "node src/extract.js provider=rekognition assetsType=mrz1",
     "extract:gc-vision:mrz1": "node src/extract.js provider=gc-vision assetsType=mrz1",
     "extract:rekognition:mrz2": "node src/extract.js provider=rekognition assetsType=mrz2",
-    "extract:gc-vision:mrz2": "node src/extract.js provider=gc-vision assetsType=mrz2"
+    "extract:gc-vision:mrz2": "node src/extract.js provider=gc-vision assetsType=mrz2",
+    "compare:prenoms": "node src/compare.js assetsType=prenoms",
+    "compare:nom": "node src/compare.js assetsType=nom",
+    "compare:nom_d_epouse": "node src/compare.js assetsType=nom_d_epouse",
+    "compare:date_de_naissance": "node src/compare.js assetsType=date_de_naissance",
+    "compare:lieu_de_naissance": "node src/compare.js assetsType=lieu_de_naissance",
+    "compare:mrz1": "node src/compare.js assetsType=mrz1",
+    "compare:mrz2": "node src/compare.js assetsType=mrz2"
   },
   "dependencies": {
     "@google-cloud/vision": "^0.22.1",
     "aws-sdk": "^2.329.0",
     "dotenv": "^6.1.0",
-    "jsonexport": "^2.3.0"
+    "jsonexport": "^2.3.0",
+    "lodash": "^4.17.11"
   }
 }
