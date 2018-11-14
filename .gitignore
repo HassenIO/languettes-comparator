@@ -3,4 +3,5 @@ node_modules/
 assets/**/*.png
 assets/**/*.txt
 assets/**/*.csv
+assets/**/*.json
 credentials/gc.json
