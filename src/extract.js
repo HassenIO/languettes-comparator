@@ -1,86 +1,64 @@
 const fs = require('fs');
-const AWS = require('aws-sdk');
-const vision = require('@google-cloud/vision');
-require('dotenv').config();
-
-const rekognition = new AWS.Rekognition({ region: 'eu-west-1' });
-const client = new vision.ImageAnnotatorClient();
+const path = require('path');
 const params = require('../lib/params')(process.argv);
 
 const provider = params.provider;
 const assetsType = params.assetsType;
 
-const baseDir = process.env.BASE_DIR;
-const inputsDir = `${baseDir}/${assetsType}/`;
-const reportFile = `${provider}/${assetsType}.csv`;
+const inputsDir = path.resolve(
+  __dirname,
+  `../assets/outputs/queries/${provider}/${assetsType}/`
+);
+const outputDir = path.resolve(
+  __dirname,
+  `../assets/outputs/extracts/${provider}/`
+);
 
-const reportLocation = `../assets/output/${reportFile}`;
-let report;
-let processedAssets = [];
-
-if (fs.existsSync(reportLocation)) {
-  const reportContent = fs.readFileSync(reportLocation, 'utf8');
-  processedAssets = reportContent.split("\n").map(line => line.split(';')[0]);
-  report = fs.createWriteStream(reportLocation, {flags: 'a'});
-} else {
-  report = fs.createWriteStream(reportLocation);
-  report.write('file;status;output;full-output;\n');
+if (!fs.existsSync(outputDir)) {
+  fs.mkdirSync(outputDir);
 }
+const report = fs.createWriteStream(outputDir + `/${assetsType}.csv`);
+report.write('file;status;text;confidence;\n');
 
-const getTextFromRekognition = async file => {
-  const fileName = file.substr(inputsDir.length);
-  rekognition.detectText(
-    { Image: { Bytes: fs.readFileSync(file) } },
-    function(err, data) {
-      const originalData = JSON.stringify(data).replace(/\n/g, '');
-      let output = false;
-      if (err) {
-        console.log(`!! Error from Rekognition: err= ${err}`);
-      } else if (!data || data === null) {
-        console.log(`!! data is null: data= ${data}`);
-        output = [ file.substr(inputsDir.length), 'KO', '', originalData ];
-      } else if (!data.TextDetections || data.TextDetections.length === 0) {
-        console.log(`!! TextDetections is empty: data.TextDetections= ${ data.TextDetections }` );
-        output = [ file.substr(inputsDir.length), 'KO', '', originalData ];
-      } else {
-        const line = data.TextDetections.filter(d => d.Type == 'LINE');
-        if (line.length > 0) {
-          const text = line[0].DetectedText.replace(/\n/g, '');
-          console.log(`Processed ${file} -> ${text}`);
-          output = [ file.substr(inputsDir.length), 'OK', text, originalData ];
-        } else {
-          output = [ file.substr(inputsDir.length), 'KO', '', originalData ];
-        }
-      }
-      if (output) {
-        report.write(output.join(';') + ';\n');
-      }
-    }
-  );
-};
-
-const getTextFromGCVision = async file => {
-  try {
-    const textDetection = await client.textDetection(file);
-    text = (textDetection && textDetection[0] && textDetection[0].fullTextAnnotation) ? textDetection[0].fullTextAnnotation.text.replace(/\n/g, '') : undefined;
-    const originalData = JSON.stringify(textDetection).replace(/\n/g, '')
-    console.log(`Processed ${file} -> ${text}`);
-    if (text) {
-      output = [ file.substr(inputsDir.length), 'OK', text, originalData ];
-    } else {
-      output = [ file.substr(inputsDir.length), 'KO', '', originalData ];
-    }
-    report.write(output.join(';') + ";\n");
-  } catch (error) {
-    console.log('Error:', error);
+const extractText = file => {
+  const content = fs.readFileSync(file);
+  if (content === 'null') writeExtract(file, content);
+  else {
+    if (provider === 'rekognition') {
+      const lines = JSON.parse(content).TextDetections.filter(
+        detection => detection.Type === 'LINE'
+      );
+      if (lines.length > 0) {
+        const bestPrediction = lines.reduce(
+          (final, line) => (line.Confidence >= final.Confidence ? line : final),
+          { Confidence: 0 }
+        );
+        writeExtract(
+          file,
+          bestPrediction.DetectedText,
+          bestPrediction.Confidence
+        );
+      } else writeExtract(file, '');
+    } else if (provider === 'gc-vision') {
+      const annotation = JSON.parse(content).find(
+        detection =>
+          detection.fullTextAnnotation && detection.fullTextAnnotation.text
+      );
+      if (annotation) {
+        const text = annotation.fullTextAnnotation.text.replace(/\n/g, '');
+        writeExtract(file, text);
+      } else writeExtract(file, '');
+    } else console.log('-- Not valid provider');
   }
 };
 
-let getText;
-if (provider === 'rekognition') getText = getTextFromRekognition;
-if (provider === 'gc-vision') getText = getTextFromGCVision;
+const writeExtract = (file, text, confidence = 'NA') => {
+  if (text === 'null') text = '';
+  const status = !!text ? 'OK' : 'KO';
+  const fileName = file.substr(inputsDir.length + 1);
+  report.write(`${fileName};${status};${text};${confidence};\n`);
+};
 
 fs.readdirSync(inputsDir)
-  .filter(file => file.substr(-4) === '.png')
-  .filter(file => !processedAssets.includes(file))
-  .map(file => getText(inputsDir + file));
+  .filter(file => file.substr(-5) === '.json')
+  .map(file => extractText(`${inputsDir}/${file}`));
