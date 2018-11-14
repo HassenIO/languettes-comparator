@@ -34,10 +34,12 @@ const visionReportFiles = gcVisionReport.map(report => report.file);
 
 const files = _.uniq(rekognitionReportFiles.concat(visionReportFiles));
 
-let overallReport = files.map(file => {
+const overallReport = files.reduce((acc, file) => {
+    console.log(file);
     const rekognitionResult = rekognitionReport.find(report => report.file === file) || {text: ''};
     const gcVisionResult = gcVisionReport.find(report => report.file === file) || {text: ''};
-    return [file, rekognitionResult.text, gcVisionResult.text].join(';') + ";";
-});
+    const match = (rekognitionResult.text === '' && gcVisionResult.text === '') ? "NA" : (rekognitionResult.text == gcVisionResult.text) ? "YES" : "NO";
+    return acc + `${file};${rekognitionResult.text};${gcVisionResult.text};${match};\n`;
+}, "file;rekognition;gc-vision;match;\n");
 
-fs.writeFileSync(`./assets/output/overall/${assetsType}.csv`, overallReport.join("\n"));
+fs.writeFileSync(`./assets/output/overall/${assetsType}.csv`, overallReport);
