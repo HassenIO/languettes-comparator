@@ -1,5 +1,7 @@
 const fs = require('fs');
 const _ = require('lodash');
+const removeAccents = require('remove-accents');
+const removePunctuation = require('remove-punctuation');
 require('dotenv').config();
 
 const params = require('../lib/params')(process.argv);
@@ -36,6 +38,13 @@ const visionReportFiles = gcVisionReport.map(report => report.file);
 
 const files = _.uniq(rekognitionReportFiles.concat(visionReportFiles));
 
+const getLooseText = (text) => removePunctuation(removeAccents(text));
+
+const generateMetaExtracts = (source, rekognitionText, gcVisionText) =>
+  fs.writeFileSync(`./assets/outputs/meta-extracts/${source}.json`, JSON.stringify({
+    rekognitionText, gcVisionText
+  }));
+
 const overallReport = files.reduce((acc, file) => {
   const originalFile = file.substr(0, file.length - 5);
   console.log(`Checking file ${originalFile}`);
@@ -51,12 +60,21 @@ const overallReport = files.reduce((acc, file) => {
       : rekognitionResult.text == gcVisionResult.text
       ? 'YES'
       : 'NO';
+  const looseMatch =
+    rekognitionResult.text === '' && gcVisionResult.text === ''
+      ? 'LOOSE-NA'
+      : match === 'YES'
+      ? 'LOOSE-YES'
+      : getLooseText(rekognitionResult.text) == getLooseText(gcVisionResult.text)
+      ? 'LOOSE-YES'
+      : 'LOOSE-NO';
+  generateMetaExtracts(originalFile, rekognitionResult.text, gcVisionResult.text);
   return (
     acc +
     `${originalFile};${rekognitionResult.text};${
       gcVisionResult.text
-    };${match};\n`
+    };${match};${looseMatch};\n`
   );
-}, 'file;rekognition;gc-vision;match;\n');
+}, 'file;rekognition;gc-vision;match;loose match;\n');
 
 fs.writeFileSync(`./assets/outputs/matches/${assetsType}.csv`, overallReport);
