@@ -40,10 +40,17 @@ const files = _.uniq(rekognitionReportFiles.concat(visionReportFiles));
 
 const getLooseText = (text) => removePunctuation(removeAccents(text));
 
-const generateMetaExtracts = (source, rekognitionText, gcVisionText) =>
-  fs.writeFileSync(`./assets/outputs/meta-extracts/${source}.json`, JSON.stringify({
-    rekognitionText, gcVisionText
-  }));
+const generateExtractionsForSageMakerGT = (overallReport) => {
+  const overallElements = overallReport.split("\n");
+  overallElements.shift();
+
+  acc = {};
+  overallElements.forEach((line) => {
+    const [file, rekognition, gcVision, match, looseMatch] = line.split(';');
+    acc[file] = {rekognition, gcVision, match, looseMatch};
+  })
+  return acc;
+}
 
 const overallReport = files.reduce((acc, file) => {
   const originalFile = file.substr(0, file.length - 5);
@@ -68,7 +75,6 @@ const overallReport = files.reduce((acc, file) => {
       : getLooseText(rekognitionResult.text) == getLooseText(gcVisionResult.text)
       ? 'LOOSE-YES'
       : 'LOOSE-NO';
-  generateMetaExtracts(originalFile, rekognitionResult.text, gcVisionResult.text);
   return (
     acc +
     `${originalFile};${rekognitionResult.text};${
@@ -78,3 +84,7 @@ const overallReport = files.reduce((acc, file) => {
 }, 'file;rekognition;gc-vision;match;loose match;\n');
 
 fs.writeFileSync(`./assets/outputs/matches/${assetsType}.csv`, overallReport);
+
+const sageMakerExtraction = generateExtractionsForSageMakerGT(overallReport);
+fs.writeFileSync(`./assets/outputs/meta-extracts/${assetsType}.json`, JSON.stringify(sageMakerExtraction));
+
