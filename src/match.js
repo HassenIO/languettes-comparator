@@ -1,7 +1,6 @@
 const fs = require('fs');
 const _ = require('lodash');
 const removeAccents = require('remove-accents');
-const removePunctuation = require('remove-punctuation');
 require('dotenv').config();
 
 const params = require('../lib/params')(process.argv);
@@ -38,19 +37,15 @@ const visionReportFiles = gcVisionReport.map(report => report.file);
 
 const files = _.uniq(rekognitionReportFiles.concat(visionReportFiles));
 
-const getLooseText = (text) => removePunctuation(removeAccents(text));
-
-const generateExtractionsForSageMakerGT = (overallReport) => {
-  const overallElements = overallReport.split("\n");
-  overallElements.shift();
-
-  acc = {};
-  overallElements.forEach((line) => {
-    const [file, rekognition, gcVision, match, looseMatch] = line.split(';');
-    acc[file] = {rekognition, gcVision, match, looseMatch};
-  })
-  return acc;
-}
+const getLooseText = text => {
+  const clearLetters = removeAccents(text);
+  const clearSymbols = clearLetters.replace(
+    /[\.,\/#!$%\^&\*;:{}=\-_`~()]/g,
+    ' '
+  );
+  const clearDoubleSpacing = clearSymbols.replace(/\s{2,}/g, ' ');
+  return clearDoubleSpacing;
+};
 
 const overallReport = files.reduce((acc, file) => {
   const originalFile = file.substr(0, file.length - 5);
@@ -72,7 +67,8 @@ const overallReport = files.reduce((acc, file) => {
       ? 'LOOSE-NA'
       : match === 'YES'
       ? 'LOOSE-YES'
-      : getLooseText(rekognitionResult.text) == getLooseText(gcVisionResult.text)
+      : getLooseText(rekognitionResult.text) ==
+        getLooseText(gcVisionResult.text)
       ? 'LOOSE-YES'
       : 'LOOSE-NO';
   return (
@@ -84,7 +80,3 @@ const overallReport = files.reduce((acc, file) => {
 }, 'file;rekognition;gc-vision;match;loose match;\n');
 
 fs.writeFileSync(`./assets/outputs/matches/${assetsType}.csv`, overallReport);
-
-const sageMakerExtraction = generateExtractionsForSageMakerGT(overallReport);
-fs.writeFileSync(`./assets/outputs/meta-extracts/${assetsType}.json`, JSON.stringify(sageMakerExtraction));
-
