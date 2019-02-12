@@ -4,11 +4,12 @@
   "author": "Hassen Taidirt <htaidirt@gmail.com>",
   "license": "MIT",
   "scripts": {
+    "setup": "./setup.sh",
     "query": "node src/query.js",
     "extract": "node src/extract.js",
     "match": "node src/match.js",
     "conflicts": "node src/conflicts.js",
-    "fastag": "node src/fastag.js"
+    "export": "node src/export.js"
   },
   "dependencies": {
     "@google-cloud/vision": "^0.22.1",
@@ -17,6 +18,8 @@
     "jsonexport": "^2.3.0",
     "lodash": "^4.17.11",
     "remove-accents": "^0.4.2",
-    "remove-punctuation": "^0.0.4"
+    "remove-punctuation": "^0.0.4",
+    "request": "^2.88.0",
+    "request-promise": "^4.2.2"
   }
 }

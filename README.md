@@ -10,7 +10,6 @@ This repo is a collection of methods to query AWS Rekognition and Google Cloud V
 
 ## Nota
 
-This is still a work in progress. But it already provid enough benefits to be shared publicly. Please note that it will very probably requires you to adapt scripts for your specific use.
+This is still a work in progress. Please note that it will very probably requires you to adapt scripts for your specific use.
 
 Hassen
-

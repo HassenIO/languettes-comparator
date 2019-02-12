@@ -1,11 +1,13 @@
 const path = require('path');
 const fs = require('fs');
+const request = require('request-promise');
 const AWS = require('aws-sdk');
 const vision = require('@google-cloud/vision');
 require('dotenv').config();
 
 const rekognition = new AWS.Rekognition({ region: 'eu-west-1' });
-const client = new vision.ImageAnnotatorClient();
+const visionClient = new vision.ImageAnnotatorClient();
+const tesseractURL = process.env.TESSERACT_URL;
 const params = require('../lib/params')(process.argv);
 
 // Extracting CLI params of form key=value
@@ -44,16 +46,31 @@ const getTextFromRekognition = async file => {
 
 const getTextFromGCVision = async file => {
   try {
-    const data = await client.textDetection(file);
+    const data = await visionClient.textDetection(file);
     saveQueryOutput(file.substr(inputsDir.length), data);
   } catch (err) {
     console.log(`!! Error from GC Vision: err= ${err}`);
   }
 };
 
+const getTextFromTesseract = async file => {
+  try {
+    const fileContent = fs.readFileSync(file).toString('base64');
+    const data = await request({
+      method: 'POST',
+      url: tesseractURL,
+      body: JSON.stringify({ img_base64: fileContent })
+    });
+    saveQueryOutput(file.substr(inputsDir.length), data);
+  } catch (err) {
+    console.log(`!! Error from Tesseract: err= ${err}`);
+  }
+};
+
 let getText;
 if (provider === 'rekognition') getText = getTextFromRekognition;
 if (provider === 'gc-vision') getText = getTextFromGCVision;
+if (provider === 'tesseract') getText = getTextFromTesseract;
 
 const processedAssets = fs
   .readdirSync(outputDir)
